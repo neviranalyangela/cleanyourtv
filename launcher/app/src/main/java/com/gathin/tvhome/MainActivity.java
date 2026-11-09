@@ -1235,11 +1235,16 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
 
     /** True when PackageManager reports apps changed since the last rebuild (one binder call). */
     private boolean packagesChangedSinceRebuild() {
+        // getChangedPackages needs API 26: below that, a missed package broadcast is not caught
+        // here. Live broadcasts still rebuild through TileRefresh.onPackagesChanged, and a fresh
+        // process starts stale, so the tiles cannot stay wrong for long.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return false;
         ChangedPackages changed = getPackageManager().getChangedPackages(packageSequence);
         return changed != null && !changed.getPackageNames().isEmpty();
     }
 
     private int currentPackageSequence(int since) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return since;
         ChangedPackages changed = getPackageManager().getChangedPackages(since);
         return changed != null ? changed.getSequenceNumber() : since;
     }
